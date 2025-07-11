@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Dashboard WordPress</title>
+  <link rel="stylesheet" href="./css/style.css">
+  <!-- Icônes via Font Awesome CDN -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    crossorigin="anonymous"
+  />
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="brand">
+    <i class="fab fa-wordpress"></i>
+    <span class="brand-text">WP Dashboard</span>
+  </div>
+  <nav>
+    <a href="#overview" class="active"><i class="fas fa-tachometer-alt"></i><span>Tableau de bord</span></a>
+  </nav>
+</aside>
+
+<div class="main">
+  <header class="topbar">
+    <h1>Tableau de bord WordPress</h1>
+  </header>
+
+  <section id="overview" class="section overview">
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon"><i class="fas fa-plus-circle"></i></div>
+        <div class="card-info">
+          <h3 id="total-sites">–</h3>
+          <p>Sites créés</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-icon"><i class="fas fa-clock"></i></div>
+        <div class="card-info">
+          <h3 id="last-created">–</h3>
+          <p>Dernier site</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="create-site" class="section form-section">
+    <h2>Créer un nouveau site WordPress</h2>
+    <form id="site-form">
+      <input type="text" id="site-name" placeholder="Nom du site" required>
+      <button type="submit"><i class="fas fa-paper-plane"></i> Créer</button>
+    </form>
+    <p id="form-message" class="form-message"></p>
+  </section>
+
+  <section id="sites-list" class="section table-section">
+    <h2>Liste des sites</h2>
+    <div class="filter-container">
+      <input
+        type="text"
+        id="filter-input"
+        placeholder="🔍 Rechercher un site…"
+        class="filter-input"
+      />
+    </div>
+    <table>
+      <thead>
+      <tr>
+        <th>Nom</th>
+        <th>URL</th>
+        <th>Status</th>
+        <th>Créé le</th>
+        <th>Actions</th>
+      </tr>
+      </thead>
+      <tbody id="sites-tbody">
+      <tr><td colspan="5">Chargement…</td></tr>
+      </tbody>
+    </table>
+  </section>
+</div>
+
+<!-- Ton script JS qui utilise SweetAlert2 -->
+<script src="./js/script.js"></script>
+</body>
+</html>
