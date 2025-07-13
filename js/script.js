@@ -1,8 +1,11 @@
-// script.js
-const API_BASE = 'http://localhost:3001/api';
+// Détecte automatiquement l'URL de l'API
+const API_BASE = (
+  window.location.hostname === 'localhost'
+    ? 'http://localhost:3001/api'
+    : `${window.location.protocol}//${window.location.hostname}/api`
+);
 
 document.addEventListener('DOMContentLoaded', () => {
-  // 1) références DOM
   const form        = document.getElementById('site-form');
   const input       = document.getElementById('site-name');
   const msg         = document.getElementById('form-message');
@@ -10,16 +13,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const totalEl     = document.getElementById('total-sites');
   const lastEl      = document.getElementById('last-created');
   const filterInput = document.getElementById('filter-input');
-
-  // 2) stockage de la liste brute
   let allSites = [];
 
-  // 3) fetch + rendu initial
+  // Récupère et affiche
   async function fetchSites() {
     try {
       const res   = await fetch(`${API_BASE}/sites`);
       const sites = await res.json();
-      allSites = sites;               // mémorisation
+      allSites = sites;
       renderSites(sites);
       updateStats(sites);
     } catch {
@@ -27,7 +28,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 4) met à jour les compteurs
   function updateStats(sites) {
     totalEl.textContent = sites.length;
     lastEl.textContent = sites.length
@@ -36,7 +36,6 @@ document.addEventListener('DOMContentLoaded', () => {
       : '–';
   }
 
-  // 5) rend les lignes + attache handlers
   function renderSites(sites) {
     if (!sites.length) {
       tbody.innerHTML = `<tr><td colspan="5">Aucun site</td></tr>`;
@@ -49,91 +48,65 @@ document.addEventListener('DOMContentLoaded', () => {
         <td>${s.status}</td>
         <td>${new Date(s.createdAt).toLocaleString('fr-FR')}</td>
         <td class="actions">
-          <i class="fa-solid fa-pen edit"    title="Renommer"></i>
+          <i class="fa-solid fa-pen edit" title="Renommer"></i>
           <i class="fa-solid fa-trash delete" title="Supprimer"></i>
         </td>
       </tr>
     `).join('');
-
-    document.querySelectorAll('.delete').forEach(el =>
-      el.addEventListener('click', onClickDelete)
-    );
-    document.querySelectorAll('.edit').forEach(el =>
-      el.addEventListener('click', onClickEdit)
-    );
+    document.querySelectorAll('.delete').forEach(el => el.addEventListener('click', onClickDelete));
+    document.querySelectorAll('.edit').forEach(el => el.addEventListener('click', onClickEdit));
   }
 
-  // 6) filtrage “live”
   filterInput.addEventListener('input', () => {
     const q = filterInput.value.trim().toLowerCase();
-    if (!q) {
-      renderSites(allSites);
-      updateStats(allSites);
-    } else {
-      const filtered = allSites.filter(s =>
+    const list = q
+      ? allSites.filter(s =>
         s.siteName.toLowerCase().includes(q) ||
         s.url.toLowerCase().includes(q)
-      );
-      renderSites(filtered);
-      updateStats(filtered);
-    }
+      )
+      : allSites;
+    renderSites(list);
+    updateStats(list);
   });
 
-  // 7) suppression via SweetAlert2
   async function onClickDelete(e) {
-    const row      = e.currentTarget.closest('tr');
-    const safe     = row.dataset.safe;
-    const siteName = row.querySelector('td').textContent;
-
+    const row = e.currentTarget.closest('tr');
+    const safe = row.dataset.safe;
+    const name = row.querySelector('td').textContent;
     const { isConfirmed } = await Swal.fire({
-      title: `Supprimer "${siteName}" ?`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Oui, supprimer',
-      cancelButtonText: 'Annuler'
+      title: `Supprimer "${name}" ?`, icon: 'warning',
+      showCancelButton: true, confirmButtonText: 'Oui', cancelButtonText: 'Annuler'
     });
     if (!isConfirmed) return;
-
     try {
       const res = await fetch(`${API_BASE}/sites/${safe}`, { method: 'DELETE' });
       if (!res.ok) throw new Error();
-      // mise à jour allSites + réaffichage
       allSites = allSites.filter(s => s.safeName !== safe);
       filterInput.dispatchEvent(new Event('input'));
       Swal.fire('Supprimé !', '', 'success');
     } catch {
-      Swal.fire('Erreur', 'Impossible de supprimer.', 'error');
+      Swal.fire('Erreur', "Impossible de supprimer.", 'error');
     }
   }
 
-  // 8) renommage via SweetAlert2
   async function onClickEdit(e) {
     const row     = e.currentTarget.closest('tr');
     const oldSafe = row.dataset.safe;
     const oldName = row.querySelector('td').textContent;
-
     const { value: newName } = await Swal.fire({
-      title: 'Renommer le site',
-      input: 'text',
-      inputLabel: 'Nouveau nom',
-      inputValue: oldName,
-      showCancelButton: true,
-      confirmButtonText: 'Valider',
-      cancelButtonText: 'Annuler',
-      inputValidator: v => !v.trim() ? 'Le nom ne peut pas être vide.' : null
+      title: 'Renommer le site', input: 'text', inputLabel: 'Nouveau nom',
+      inputValue: oldName, showCancelButton: true,
+      confirmButtonText: 'Valider', cancelButtonText: 'Annuler',
+      inputValidator: v => !v.trim() && 'Le nom ne peut pas être vide.'
     });
     if (!newName || newName.trim() === oldName) return;
-
     try {
       const res = await fetch(`${API_BASE}/sites/${oldSafe}`, {
         method: 'PATCH',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ newName: newName.trim() })
       });
-      if (!res.ok) {
-        const err = await res.json(); throw new Error(err.message);
-      }
-      // maj allSites et ré-affichage
+      if (!res.ok) throw await res.json();
       allSites = allSites.map(s =>
         s.safeName === oldSafe
           ? {
@@ -151,7 +124,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 9) création de site
   form.addEventListener('submit', async e => {
     e.preventDefault();
     const name = input.value.trim();
@@ -164,19 +136,17 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify({ siteName: name })
       });
       const data = await res.json();
+      msg.textContent = res.ok ? data.message : data.message || 'Erreur';
       if (res.ok) {
-        msg.textContent = data.message;
         input.value = '';
-        filterInput.value = '';     // réinitialise le filtre
+        filterInput.value = '';
         await fetchSites();
-      } else {
-        msg.textContent = data.message || 'Erreur';
       }
     } catch {
       msg.textContent = 'Erreur réseau';
     }
   });
 
-  // 10) lancement initial
+  // init
   fetchSites();
 });
